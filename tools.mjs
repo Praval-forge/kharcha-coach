@@ -3,6 +3,16 @@
 // Transaction shape: {d:'YYYY-MM-DD', desc, amt (negative = spent), cat, m (merchant)}.
 
 const r0 = n => Math.round(n);
+export const NEEDS = ['Rent', 'Groceries', 'Bills & utilities', 'Transport', 'Health & fitness', 'Transfers & EMI', 'Education'];
+const weekStart = iso => { const d = new Date(iso + 'T00:00:00'); d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
+
+/* Validates and trims a chart request from the model before it reaches the browser. */
+export function cleanChart(input) {
+  const data = (Array.isArray(input?.data) ? input.data : []).slice(0, 24)
+    .map(p => ({label: String(p?.label ?? '').slice(0, 24), value: Number(p?.value)})).filter(p => p.label && Number.isFinite(p.value) && p.value >= 0);
+  if (data.length < 2) return null;
+  return {title: String(input.title || '').slice(0, 80), kind: input.kind === 'columns' ? 'columns' : 'bars', unit: input.unit === 'count' ? 'count' : 'inr', data};
+}
 const monthsOf = txns => {
   if (!txns.length) return 1;
   const ds = txns.map(t => t.d).sort();
@@ -28,6 +38,21 @@ function budgetStatus(T, budgets = {}) {
 
 export const TOOL_DEFS = [
   {
+    name: 'show_chart',
+    description: 'Draws a small chart inside the chat. Use it when a trend or comparison is clearer as a picture (spending by month or week, category split). First get the numbers with query_transactions or get_overview, then pass them here. Use kind "columns" for time series and "bars" for categories.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        title: {type: 'string'},
+        kind: {type: 'string', enum: ['columns', 'bars']},
+        unit: {type: 'string', enum: ['inr', 'count'], description: 'inr for rupee amounts (default).'},
+        data: {type: 'array', description: 'Between 2 and 24 points.', items: {type: 'object', properties: {label: {type: 'string'}, value: {type: 'number'}}, required: ['label', 'value'], additionalProperties: false}},
+      },
+      required: ['title', 'data'],
+      additionalProperties: false,
+    },
+  },
+  {
     name: 'get_overview',
     description: "Headline numbers for the user's statement: period, income and spending per month, savings rate, spending per month by category, top merchants, heads-up alerts (overlapping, new or duplicate charges) and the user's budget limits against the latest month. Call this first for broad questions.",
     input_schema: {type: 'object', properties: {}, additionalProperties: false},
@@ -45,7 +70,7 @@ export const TOOL_DEFS = [
         date_to: {type: 'string', description: 'YYYY-MM-DD, inclusive.'},
         type: {type: 'string', enum: ['debit', 'credit', 'all'], description: 'Default debit (money spent).'},
         min_amount: {type: 'number'}, max_amount: {type: 'number'},
-        group_by: {type: 'string', enum: ['none', 'merchant', 'category', 'month']},
+        group_by: {type: 'string', enum: ['none', 'merchant', 'category', 'month', 'week']},
         sort: {type: 'string', enum: ['recent', 'largest']},
         limit: {type: 'integer', description: 'Max rows returned (default 15, max 40).'},
       },
@@ -94,6 +119,7 @@ export function runTool(name, input, data) {
         income_per_month: r0(income / months), spent_per_month: r0(spent / months),
         savings_rate_pct: income ? Math.round((income - spent) / income * 100) : null,
         category_per_month: catPM(), top_merchants_total: group(debits, t => t.m).slice(0, 8).map(g => ({merchant: g.key, total: g.total, charges: g.count})),
+        needs_per_month: r0(sum(debits.filter(t => NEEDS.includes(t.cat)), t => -t.amt) / months), wants_per_month: r0(sum(debits.filter(t => !NEEDS.includes(t.cat)), t => -t.amt) / months),
         recurring_per_month: r0(sum(data.recurring.filter(r => !r.lapsed), r => r.monthly)),
         alerts: data.alerts || [], budgets: budgetStatus(T, data.budgets),
       };
@@ -109,9 +135,9 @@ export function runTool(name, input, data) {
         (min_amount == null || Math.abs(t.amt) >= min_amount) && (max_amount == null || Math.abs(t.amt) <= max_amount));
       const out = {matched: L.length, total: r0(sum(L, t => Math.abs(t.amt)))};
       if (group_by !== 'none') {
-        const key = {merchant: t => t.m, category: t => t.cat, month: t => t.d.slice(0, 7)}[group_by];
+        const key = {merchant: t => t.m, category: t => t.cat, month: t => t.d.slice(0, 7), week: t => weekStart(t.d)}[group_by];
         out.groups = group(L, key).slice(0, 25);
-        if (group_by === 'month') out.groups.sort((a, b) => a.key < b.key ? -1 : 1);
+        if (group_by === 'month' || group_by === 'week') out.groups.sort((a, b) => a.key < b.key ? -1 : 1);
       } else {
         L = sort === 'largest' ? [...L].sort((a, b) => Math.abs(b.amt) - Math.abs(a.amt)) : [...L].sort((a, b) => a.d < b.d ? 1 : -1);
         out.transactions = L.slice(0, limit).map(t => ({date: t.d, description: t.desc.slice(0, 80), amount: r0(Math.abs(t.amt)), category: t.cat}));
@@ -143,6 +169,11 @@ export function runTool(name, input, data) {
       const flex = group(debits.filter(t => ['Food & dining', 'Shopping', 'Transport', 'Other', 'Groceries'].includes(t.cat)), t => t.cat)
         .slice(0, 3).map(g => ({category: g.key, per_month: r0(g.total / months)}));
       return {target: r0(target), months: mo, free_cash_flow_per_month: r0(free), needed_per_month: r0(need), gap_per_month: r0(Math.max(0, need - free)), affordable_now: free >= need, largest_flexible_categories: flex};
+    }
+    case 'show_chart': {
+      const c = cleanChart(input);
+      if (!c) throw new Error('Provide at least 2 data points with a label and a non-negative value.');
+      return {shown: true, points: c.data.length, note: 'The chart is now visible to the user. Do not repeat the numbers; add one sentence of insight.'};
     }
     default: throw new Error(`Unknown tool: ${name}`);
   }

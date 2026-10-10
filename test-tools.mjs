@@ -39,3 +39,17 @@ assert.deepEqual(ov2.alerts, ['Overlap: x']);
 assert.equal(ov2.budgets.length, 1);
 assert.deepEqual({c: ov2.budgets[0].category, spent: ov2.budgets[0].spent_this_month, over: ov2.budgets[0].over_by}, {c: 'Food & dining', spent: 300, over: 0});
 console.log('alerts + budgets ok');
+
+// Charts, weekly grouping and the needs/wants split.
+import {cleanChart} from './tools.mjs';
+assert.equal(cleanChart({title: 'x', data: [{label: 'a', value: 1}]}), null, 'a chart needs at least 2 points');
+const ch = cleanChart({title: 'Food', kind: 'columns', data: [{label: 'Aug', value: 500}, {label: 'Sep', value: 700}, {label: '', value: 5}, {label: 'bad', value: -3}, {label: 'nan', value: 'x'}]});
+assert.equal(ch.data.length, 2); assert.equal(ch.kind, 'columns'); assert.equal(ch.unit, 'inr');
+assert.equal(runTool('show_chart', {title: 't', data: [{label: 'a', value: 1}, {label: 'b', value: 2}]}, data).shown, true);
+assert.throws(() => runTool('show_chart', {title: 't', data: []}, data));
+const wk = runTool('query_transactions', {group_by: 'week'}, data);
+assert.ok(wk.groups.every(g => /^\d{4}-\d{2}-\d{2}$/.test(g.key)) && wk.groups.every(g => new Date(g.key + 'T00:00:00').getDay() === 1), 'weeks start on Monday');
+const ov3 = runTool('get_overview', {}, data);
+assert.ok(ov3.needs_per_month > 0 && ov3.wants_per_month > 0);
+assert.ok(TOOL_DEFS.some(t => t.name === 'show_chart'));
+console.log('charts + weeks + needs/wants ok');

@@ -4,6 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="color-scheme" content="dark light">
+<meta name="theme-color" content="#13111F">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" href="/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/icon-192.png">
 <script>try{if(JSON.parse(localStorage.getItem("kc-theme"))==="light")document.documentElement.dataset.kc="light"}catch(e){}</script>
 <title>Kharcha Coach</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -214,6 +218,39 @@ code{font-family:var(--mono);font-size:12px;background:var(--surface2);padding:2
 .fab.tour-hl{border-radius:999px}
 @media (max-width:560px){.tour{bottom:12px}}
 
+/* voice */
+.mic{padding:9px 13px;display:inline-grid;place-items:center}
+.mic.rec{background:var(--crit-soft);color:var(--crit);border-color:var(--crit);animation:pulse 1.2s infinite ease-in-out}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 color-mix(in srgb,var(--crit) 40%,transparent)}50%{box-shadow:0 0 0 8px transparent}}
+
+/* chat charts */
+.chartbox{margin:4px 0 8px;padding:12px 14px;border-radius:16px;background:var(--surface);border:1px solid var(--line)}
+.ctitle{font-weight:800;font-size:13.5px;margin-bottom:8px}
+.ccols{display:flex;align-items:flex-end;gap:6px;height:130px}
+.ccol{flex:1;min-width:0;height:100%;display:grid;grid-template-rows:auto 1fr auto;gap:3px;text-align:center}
+.ccol b{font:500 10px var(--mono);color:var(--fg)}
+.ccol small{font-size:10.5px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cbarwrap{display:flex;align-items:flex-end}
+.cbarwrap i{display:block;width:100%;background:linear-gradient(180deg,#8B74FF,#45CBDD);border-radius:8px 8px 4px 4px;min-height:3px;transform-origin:bottom;animation:growY .6s cubic-bezier(.2,.8,.2,1) both}
+.chb{display:grid;gap:8px}
+.cr{display:grid;grid-template-columns:minmax(70px,110px) minmax(0,1fr) auto;gap:8px;align-items:center;font-size:12.5px}
+.cr .bar{height:10px}
+.cr b{font-size:12px;font-weight:500}
+
+/* needs / wants */
+.nw{display:grid;gap:8px;padding-bottom:6px}
+.nwbar{display:flex;height:16px;border-radius:999px;overflow:hidden;background:var(--surface2)}
+.nwbar i{display:block;height:100%}
+.nwleg{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13px}
+.nwleg span{display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap}
+.nwleg i{width:10px;height:10px;border-radius:50%;display:inline-block}
+
+/* negotiate + share dialog */
+.neg{margin-left:auto;padding:2px 10px;font-size:12px;font-weight:700}
+.sharedlg{border:1px solid var(--line);border-radius:24px;background:var(--surface);color:var(--fg);padding:16px;max-width:min(420px,94vw);box-shadow:var(--shadow)}
+.sharedlg::backdrop{background:rgba(5,3,20,.6)}
+.sharedlg canvas{width:100%;height:auto;border-radius:16px;display:block;margin-bottom:12px}
+
 @keyframes rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 @keyframes pop{from{opacity:0;transform:translateY(12px) scale(.97)}to{opacity:1;transform:none}}
 @keyframes growX{from{transform:scaleX(0)}to{transform:scaleX(1)}}
@@ -235,6 +272,9 @@ code{font-family:var(--mono);font-size:12px;background:var(--surface2);padding:2
       <button id="loadSample" type="button">Load sample data</button>
       <button id="loadDemo" type="button" hidden>Load demo statement</button>
       <button id="forget" type="button" hidden>Forget my data</button>
+      <button id="shareBtn" type="button">Share my month</button>
+      <button id="privBtn" type="button" aria-pressed="false">Hide amounts</button>
+      <button id="installBtn" type="button" hidden>Install app</button>
       <button id="tourBtn" type="button">Take a tour</button>
       <button id="theme" type="button" aria-label="Switch colour theme">Light mode</button>
     </div>
@@ -279,6 +319,7 @@ code{font-family:var(--mono);font-size:12px;background:var(--surface2);padding:2
       <div class="presets" id="presets"></div>
       <form class="ask" id="askForm">
         <input id="q" type="text" placeholder="Ask about your spending…" autocomplete="off" aria-label="Your question">
+        <button class="mic" id="mic" type="button" aria-label="Ask by voice" aria-pressed="false" hidden><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button>
         <button class="primary" type="submit" id="askBtn">Ask</button>
       </form>
     </section>
@@ -316,6 +357,7 @@ code{font-family:var(--mono);font-size:12px;background:var(--surface2);padding:2
   <div class="grid2 bottom">
     <section class="panel" aria-labelledby="catTitle">
       <div class="panel-head"><h2 id="catTitle">Where your money went</h2><span class="muted">Avg per month · set a monthly budget</span></div>
+      <div class="nw" id="nw"></div>
       <div class="cats" id="cats"></div>
     </section>
     <section class="panel" aria-labelledby="txTitle">
@@ -347,7 +389,8 @@ code{font-family:var(--mono);font-size:12px;background:var(--surface2);padding:2
   <div class="presets" id="dpresets"></div>
   <form class="ask" id="dform">
     <input id="dq" type="text" placeholder="Ask about your spending…" autocomplete="off" aria-label="Your question">
-    <button class="primary" type="submit" id="dbtn">Ask</button>
+    <button class="mic" id="dmic" type="button" aria-label="Ask by voice" aria-pressed="false" hidden><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button>
+        <button class="primary" type="submit" id="dbtn">Ask</button>
   </form>
 </aside>
 
@@ -361,6 +404,11 @@ code{font-family:var(--mono);font-size:12px;background:var(--surface2);padding:2
   </div>
 </div>
 
+<dialog id="shareDlg" class="sharedlg" aria-label="Share your month">
+  <canvas id="shareCv" width="1080" height="1350"></canvas>
+  <div class="row-btns"><button class="primary small" id="shDl" type="button">Download image</button><button class="small" id="shShare" type="button" hidden>Share</button><button class="small" id="shClose" type="button">Close</button></div>
+</dialog>
+
 <script>
 (() => {
 'use strict';
@@ -368,7 +416,8 @@ code{font-family:var(--mono);font-size:12px;background:var(--surface2);padding:2
 const $ = id => document.getElementById(id);
 const DAY = 86400000;
 const inr = new Intl.NumberFormat('en-IN', {style:'currency', currency:'INR', maximumFractionDigits:0});
-const money = n => inr.format(Math.round(n));
+let PRIVATE = (() => { try { return localStorage.getItem('kc-private') === 'true'; } catch { return false; } })();
+const money = n => PRIVATE ? '₹ ••••' : inr.format(Math.round(n));
 const dFmt = new Intl.DateTimeFormat('en-IN', {day:'numeric', month:'short'});
 const fmtD = d => dFmt.format(d);
 const sod = d => new Date(d.getFullYear(), d.getMonth(), d.getDate());
@@ -463,11 +512,12 @@ function detect(key, list){
 const mkey = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
 function monthlySeries(txns, start, end){
   const m = new Map();
-  for (const t of txns) if (t.amount < 0) {
-    const k = mkey(t.date); let e = m.get(k); if (!e) m.set(k, e = {key: k, spent: 0, cats: {}});
+  for (const t of txns) {
+    const k = mkey(t.date); let e = m.get(k); if (!e) m.set(k, e = {key: k, spent: 0, income: 0, cats: {}});
+    if (t.amount > 0) { e.income += t.amount; continue; }
     const v = -t.amount; e.spent += v; e.cats[t.category] = (e.cats[t.category] || 0) + v;
   }
-  const list = [...m.values()].sort((a,b) => a.key < b.key ? -1 : 1);
+  const list = [...m.values()].filter(e => e.spent > 0).sort((a,b) => a.key < b.key ? -1 : 1);
   const sk = mkey(start), ek = mkey(end), dim = new Date(end.getFullYear(), end.getMonth()+1, 0).getDate();
   for (const e of list) e.partial = (e.key === sk && start.getDate() > 3) || (e.key === ek && end.getDate() < dim - 3);
   return list;
@@ -579,9 +629,9 @@ function txnsFromCSV(text){
   const find = re => h.findIndex(c => re.test(c));
   let di = find(/^(txn |transaction |posting )?date$/); if (di < 0) di = find(/date/);
   const de = find(/desc|narration|particular|details|remark|merchant|transaction(?! date)/);
-  const deb = find(/debit|withdraw|\bdr\b/), cre = find(/credit|deposit|\bcr\b/);
   const am = h.findIndex(c => /amount|amt/.test(c) && !/debit|credit|withdraw|deposit/.test(c));
-  const ty = find(/^type$|dr\/cr|cr\/dr/);
+  const ty = find(/^type$|dr\s*\/\s*cr|cr\s*\/\s*dr/);
+  const deb = h.findIndex((c, i) => i !== ty && /debit|withdraw|\bdr\b/.test(c)), cre = h.findIndex((c, i) => i !== ty && /credit|deposit|\bcr\b/.test(c));
   if (de < 0) throw new Error('No description column (Description / Narration / Particulars) was found.');
   if (am < 0 && deb < 0 && cre < 0) throw new Error('No Amount or Debit/Credit columns were found.');
   const body = rows.slice(hi + 1), mdy = detectMDY(body.map(r => r[di]));
@@ -602,6 +652,7 @@ function txnsFromCSV(text){
   if (!split && ty < 0 && !out.some(t => t.amount < 0))
     out.forEach(t => { if (!INCOME_RE.test(t.desc)) t.amount = -t.amount; });
   if (out.length < 3) throw new Error('Fewer than 3 usable transactions were found in that file.');
+  out.bank = detectBank(h);
   return out;
 }
 const enrich = list => list.map(t => ({...t, merchant: merchantKey(t.desc), category: categorise(t.desc, t.amount)}));
@@ -638,7 +689,7 @@ function sampleTxns(){
 }
 
 /* ---------- state ---------- */
-const S = {txns: [], a: null, cancel: new Set(), chat: [], label: '', busy: false, filter: '', shown: 25, persist: false, dismissed: new Set(), calMonth: new Date(TODAY.getFullYear(), TODAY.getMonth(), 1), calSel: '',
+const S = {txns: [], a: null, cancel: new Set(), chat: [], label: '', busy: false, filter: '', shown: 25, persist: false, dismissed: new Set(), neg: null, calMonth: new Date(TODAY.getFullYear(), TODAY.getMonth(), 1), calSel: '',
   budgets: ls.get('kc-budgets', {}), goals: ls.get('kc-goals', [])};
 let ai = null, agent = null;
 
@@ -674,7 +725,7 @@ function render(){
     ['Savings rate', sr == null ? '—' : Math.round(sr*100) + '%', sr == null ? '' : sr >= 0.2 ? 'Healthy: 20% or more' : sr >= 0 ? 'Below the 20% guideline' : 'Spending more than you earn'],
     ['Recurring per month', money(a.recurringPM), `${a.active.length} active payments · ${money(a.subsPM)} excluding rent`],
   ].map(([l,v,s]) => `<div class="kpi"><span class="label">${l}</span><span class="v">${v}</span><span class="s">${esc(s)}</span></div>`).join('');
-  renderSubs(); renderAlerts(); renderTrends(); renderGoals(); renderCal(); renderNudges(); renderCats(); renderTx(); refreshForget(); updateAgentUI(); $('insights').innerHTML = insights().map(s => `<li>${s}</li>`).join(''); renderChat(); renderPresets();
+  renderSubs(); renderAlerts(); renderTrends(); renderGoals(); renderCal(); renderNudges(); renderNW(); renderCats(); renderTx(); refreshForget(); updateAgentUI(); $('insights').innerHTML = insights().map(s => `<li>${s}</li>`).join(''); renderChat(); renderPresets();
 }
 
 function dueText(r){
@@ -699,7 +750,7 @@ function renderTrends(){
   $('trendNote').textContent = m.some(e => e.partial) ? 'Striped = partial month' : '';
   $('trend').innerHTML = m.map(e => {
     const [y, mo] = e.key.split('-'), name = new Date(+y, mo - 1, 1).toLocaleDateString('en-IN', {month: 'short'});
-    return `<div class="col${e.partial ? ' partial' : ''}"><div style="display:flex;align-items:flex-end"><div class="bar2" style="height:${(e.spent / max * 100).toFixed(1)}%"></div></div><b>₹${e.spent >= 1000 ? Math.round(e.spent / 1000) + 'k' : Math.round(e.spent)}</b><span>${name}</span></div>`;
+    return `<div class="col${e.partial ? ' partial' : ''}"><div style="display:flex;align-items:flex-end"><div class="bar2" style="height:${(e.spent / max * 100).toFixed(1)}%"></div></div><b>${PRIVATE ? '••••' : '₹' + (e.spent >= 1000 ? Math.round(e.spent / 1000) + 'k' : Math.round(e.spent))}</b><span>${name}</span></div>`;
   }).join('') || '<div class="empty">No spending yet.</div>';
   const full = m.filter(e => !e.partial), out = [];
   if (full.length >= 2) {
@@ -799,6 +850,105 @@ function showTour(i){
   $('tour').hidden = false; $('tNext').focus({preventScroll: true});
 }
 
+/* ---------- privacy mode ---------- */
+function updatePrivacyBtn(){ $('privBtn').textContent = PRIVATE ? 'Show amounts' : 'Hide amounts'; $('privBtn').setAttribute('aria-pressed', String(PRIVATE)); }
+function togglePrivacy(){ PRIVATE = !PRIVATE; ls.set('kc-private', PRIVATE); updatePrivacyBtn(); render(); }
+
+/* ---------- agent charts inside the chat ---------- */
+const fmtVal = (v, unit) => unit === 'count' ? String(Math.round(v)) : money(v);
+const shortVal = (v, unit) => unit === 'count' ? String(Math.round(v)) : PRIVATE ? '••' : '₹' + (v >= 1e5 ? (v / 1e5).toFixed(1).replace(/\.0$/, '') + 'L' : v >= 1000 ? Math.round(v / 1000) + 'k' : Math.round(v));
+function chartHTML(c){
+  const max = Math.max(...c.data.map(p => p.value), 1);
+  const body = c.kind === 'columns'
+    ? `<div class="ccols">${c.data.map(p => `<div class="ccol" title="${esc(p.label)}: ${esc(fmtVal(p.value, c.unit))}">${c.data.length <= 9 ? `<b>${esc(shortVal(p.value, c.unit))}</b>` : ''}<div class="cbarwrap"><i style="height:${(p.value / max * 100).toFixed(1)}%"></i></div><small>${esc(p.label)}</small></div>`).join('')}</div>`
+    : `<div class="chb">${c.data.map((p, i) => `<div class="cr"><span>${esc(p.label)}</span><div class="bar"><i style="width:${(p.value / max * 100).toFixed(1)}%;--c:${CAT_COLORS[i % CAT_COLORS.length]}"></i></div><b class="num">${esc(fmtVal(p.value, c.unit))}</b></div>`).join('')}</div>`;
+  return `<div class="chartbox" role="img" aria-label="${esc(c.title)}"><div class="ctitle">${esc(c.title)}</div>${body}</div>`;
+}
+
+/* ---------- voice questions (browser speech recognition) ---------- */
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+let rec = null;
+function listen(btn, input){
+  if (!SR) return;
+  if (rec) { rec.stop(); return; }
+  rec = new SR(); rec.lang = $('lang').value === 'hi' ? 'hi-IN' : 'en-IN'; rec.interimResults = false; rec.maxAlternatives = 1;
+  btn.classList.add('rec'); btn.setAttribute('aria-pressed', 'true');
+  rec.onresult = e => { const text = e.results[0][0].transcript; input.value = text; ask(text); };
+  rec.onerror = e => { if (e.error === 'not-allowed') showError('Microphone access was blocked. Allow it in the browser address bar to ask by voice.'); };
+  rec.onend = () => { rec = null; btn.classList.remove('rec'); btn.setAttribute('aria-pressed', 'false'); };
+  try { rec.start(); } catch { rec = null; btn.classList.remove('rec'); }
+}
+
+/* ---------- negotiation helper ---------- */
+function negotiate(key){
+  const r = S.a.recurring.find(x => x.key === key); if (!r) return;
+  S.neg = r; setDrawer(true);
+  const q = `Draft a short, polite message asking ${r.name} for a better price. I have paid ${money(r.amount)} ${r.freq.toLowerCase()} for ${r.count} billing cycles${r.hike ? ` and the price recently went up from ${money(r.hike.from)} to ${money(r.hike.to)}` : ''}.`;
+  ask(q).finally(() => { S.neg = null; });
+}
+function negotiationDraft(r){
+  return `Here is a draft you can send to ${r.name}:\n\n"Hi ${r.name} team, I have been a customer for ${r.count} billing cycles, paying ${money(r.amount)} ${r.freq.toLowerCase()}. I would like to stay, but ${r.hike ? `the recent increase from ${money(r.hike.from)} to ${money(r.hike.to)} makes it hard` : 'I am reviewing my monthly expenses'}. Is there a loyalty discount, a cheaper plan or an annual offer that could lower my cost? If not, I will have to cancel. Thank you!"\n\nIf they say no, ask about a pause option or a cheaper tier, and set a reminder to review it before the next renewal.`;
+}
+
+/* ---------- bank format detection ---------- */
+function detectBank(h){
+  const j = h.join('|');
+  if (/narration/.test(j) && /withdrawal amt/.test(j)) return 'HDFC Bank';
+  if (/txn date/.test(j) && /ref no/.test(j)) return 'SBI';
+  if (/transaction remarks/.test(j)) return 'ICICI Bank';
+  if (/tran date/.test(j) && /particulars/.test(j)) return 'Axis Bank';
+  if (/sl\.? ?no/.test(j) && /chq/.test(j)) return 'Kotak';
+  return '';
+}
+
+/* ---------- needs vs wants (50/30/20 guide) ---------- */
+const NEEDS = ['Rent', 'Groceries', 'Bills & utilities', 'Transport', 'Health & fitness', 'Transfers & EMI', 'Education'];
+function renderNW(){
+  const a = S.a, needs = a.catList.filter(([c]) => NEEDS.includes(c)).reduce((s, [, v]) => s + v, 0) / a.months, wants = a.catList.filter(([c]) => !NEEDS.includes(c)).reduce((s, [, v]) => s + v, 0) / a.months;
+  const base = a.incomePM > 0 ? a.incomePM : needs + wants, saved = Math.max(0, base - needs - wants), pct = v => Math.round(v / base * 100);
+  const seg = [['Needs', needs, '#8B74FF', 50], ['Wants', wants, '#FFB88C', 30], ['Saved', saved, '#58E0B4', 20]];
+  $('nw').innerHTML = `<div class="label">Needs, wants and savings${a.incomePM > 0 ? ' (share of income)' : ''}</div>
+    <div class="nwbar" role="img" aria-label="Needs ${pct(needs)} percent, wants ${pct(wants)} percent, saved ${pct(saved)} percent">${seg.map(([n, v, c]) => `<i style="width:${Math.max(0, v / base * 100).toFixed(1)}%;background:${c}"></i>`).join('')}</div>
+    <div class="nwleg">${seg.map(([n, v, c, g]) => `<span><i style="background:${c}"></i>${n} <b>${pct(v)}%</b> <small class="muted">${money(v)}</small> <small class="muted">(guide ${g}%)</small></span>`).join('')}</div>`;
+}
+
+/* ---------- shareable summary card ---------- */
+function drawShare(){
+  const cv = $('shareCv'), W = 1080, H = 1350, c = cv.getContext('2d'); cv.width = W; cv.height = H;
+  const a = S.a, full = a.monthly.filter(m => !m.partial), cur = full[full.length - 1] || a.monthly[a.monthly.length - 1], disp = getComputedStyle(document.body).getPropertyValue('--display') || 'sans-serif', body = getComputedStyle(document.body).fontFamily;
+  const g = c.createLinearGradient(0, 0, W, H); g.addColorStop(0, '#2C2457'); g.addColorStop(.55, '#202E54'); g.addColorStop(1, '#17463F'); c.fillStyle = g; c.fillRect(0, 0, W, H);
+  const rr = (x, y, w, h, r, fill) => { c.beginPath(); c.roundRect(x, y, w, h, r); c.fillStyle = fill; c.fill(); };
+  const txt = (t, x, y, size, color, weight = 700, family = disp, align = 'left') => { c.font = `${weight} ${size}px ${family}`; c.fillStyle = color; c.textAlign = align; c.fillText(t, x, y); };
+  const monthName = new Date(+cur.key.slice(0, 4), +cur.key.slice(5) - 1, 1).toLocaleDateString('en-IN', {month: 'long', year: 'numeric'});
+  rr(60, 60, 84, 84, 42, '#58E0B4'); txt('K', 102, 120, 52, '#0A2A21', 800, disp, 'center');
+  txt('Kharcha Coach', 168, 118, 40, '#F4F0FB'); txt(`My money in ${monthName}`, 60, 230, 56, '#F4F0FB');
+  txt('SPENT', 60, 340, 28, '#ADA7C6', 700, body); txt(money(cur.spent), 60, 430, 110, '#FFFFFF');
+  const saved = cur.income > 0 ? cur.income - cur.spent : null;
+  if (saved != null) { const ok = saved >= 0; rr(60, 470, 520, 70, 35, ok ? '#18392F' : '#40212F'); txt(ok ? `Saved ${PRIVATE ? '••••' : Math.round(saved / cur.income * 100) + '%'} of income` : 'Spent more than earned', 90, 518, 34, ok ? '#58E0B4' : '#FF8D93', 700, body); }
+  txt('WHERE IT WENT', 60, 640, 28, '#ADA7C6', 700, body);
+  const cats = Object.entries(cur.cats).sort((x, y) => y[1] - x[1]).slice(0, 4), maxv = cats[0]?.[1] || 1;
+  cats.forEach(([name, v], i) => {
+    const y = 700 + i * 112; txt(name, 60, y + 30, 36, '#F4F0FB', 700, body); txt(money(v), W - 60, y + 30, 36, '#F4F0FB', 700, body, 'right');
+    rr(60, y + 48, W - 120, 22, 11, 'rgba(255,255,255,.12)'); rr(60, y + 48, Math.max(22, (W - 120) * v / maxv), 22, 11, CAT_COLORS[i % CAT_COLORS.length]);
+  });
+  rr(60, 1190, W - 120, 90, 30, 'rgba(255,255,255,.1)');
+  txt(`${a.active.length} recurring payments`, 90, 1245, 34, '#F4F0FB', 700, body); txt(`${money(a.recurringPM * 12)} / year`, W - 90, 1245, 34, '#58E0B4', 700, body, 'right');
+  txt('Made with Kharcha Coach', W / 2, 1322, 26, '#ADA7C6', 600, body, 'center');
+}
+function openShare(){
+  if (!S.a?.monthly.length) return;
+  drawShare(); $('shShare').hidden = !(navigator.canShare && navigator.share);
+  $('shareDlg').showModal();
+}
+const shareBlob = () => new Promise(ok => $('shareCv').toBlob(ok, 'image/png'));
+async function downloadShare(){
+  const b = await shareBlob(), url = URL.createObjectURL(b), a = document.createElement('a'); a.href = url; a.download = 'my-month-kharcha-coach.png'; a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+async function nativeShare(){
+  const b = await shareBlob(), f = new File([b], 'my-month-kharcha-coach.png', {type: 'image/png'});
+  try { if (navigator.canShare({files: [f]})) await navigator.share({files: [f], title: 'My month with Kharcha Coach'}); } catch { /* user cancelled */ }
+}
+
 function renderGoals(){
   const a = S.a, free = a.incomePM - a.spentPM, goals = [...S.goals].sort((x, y) => x.date < y.date ? -1 : 1);
   let cum = 0;
@@ -829,7 +979,7 @@ function renderSubs(){
     return `<li class="sub${r.lapsed ? ' lapsed' : ''}">${box}
       <label class="name"${r.lapsed ? '' : ` for="cx${i}"`}><span class="av" style="--h:${hue(r.name)}" aria-hidden="true">${esc(r.name.charAt(0).toUpperCase())}</span><span class="nm">${esc(r.name)}</span>${chips.join('')}</label>
       <span class="amt num">${r.variable ? '~' : ''}${money(r.amount)}</span>
-      <div class="meta"><span>${esc(r.category)}</span><span>${due.t}</span><span class="num">${money(r.yearly)}/yr</span><span>${r.count} charges seen</span></div>
+      <div class="meta"><span>${esc(r.category)}</span><span>${due.t}</span><span class="num">${money(r.yearly)}/yr</span><span>${r.count} charges seen</span>${r.lapsed || r.category === 'Rent' ? '' : `<button class="small neg" type="button" data-neg="${esc(r.key)}">Negotiate</button>`}</div>
     </li>`;
   }).join('');
   updateSavings();
@@ -883,6 +1033,7 @@ function parseAmount(q){
 const CAT_WORDS = {'Food & dining':/food|dining|restaurant|eat|swiggy|zomato/, 'Groceries':/grocer/, 'Transport':/transport|cab|uber|ola\b|fuel|travel commute/, 'Shopping':/shopping|amazon|myntra/, 'Bills & utilities':/bill|utilit|electric|phone|internet/, 'Health & fitness':/health|fitness|gym|cult/, 'Rent':/\brent\b/, 'Transfers & EMI':/emi|loan|sip|invest/, 'Subscriptions':/entertain/, 'Other':/\bother\b/};
 function localAnswer(q){
   const a = S.a, ql = q.toLowerCase(), subs = a.active.filter(r => r.category !== 'Rent');
+  if (S.neg && /negotiat|better price|haggle|discount/.test(ql)) return negotiationDraft(S.neg);
   if (/hike|price|increas|went up|costlier/.test(ql)) {
     const h = a.active.filter(r => r.hike);
     return h.length ? `Price increases I found:\n${h.map(r => `- **${r.name}**: ${money(r.hike.from)} → ${money(r.hike.to)} (${money((r.hike.to - r.hike.from) * (r.yearly / r.amount))} more a year)`).join('\n')}` : 'None of your recurring payments have gone up in this statement.';
@@ -928,7 +1079,7 @@ function md(t){
 }
 function botHTML(m){
   const steps = m.steps?.length ? `<div class="steps">${m.steps.map(s => `<span class="chip">${esc(s)}</span>`).join('')}</div>` : '';
-  return steps + (m.content ? md(m.content) : '<span class="dots" role="status" aria-label="Thinking"><i></i><i></i><i></i></span>');
+  return steps + (m.charts || []).map(chartHTML).join('') + (m.content ? md(m.content) : '<span class="dots" role="status" aria-label="Thinking"><i></i><i></i><i></i></span>');
 }
 /* The coach panel and the floating drawer are two views of the same conversation. */
 const HELLO = '<div class="msg bot"><p>Hi there! I have had a look at your statement. Ask me which subscriptions to trim, where the money goes, or whether a goal is realistic.</p></div>';
@@ -956,7 +1107,7 @@ function dataSummary(){
 const PREAMBLE = `You are Kharcha Coach, a friendly, practical personal-finance coach for a user in India. Use ₹ and Indian number formatting (e.g. ₹1,25,000). Base every claim on the data below and cite real numbers from it. Be specific and actionable. Keep answers under 140 words. Use short paragraphs or "- " bullet lists and **bold** for key figures. Do not give investment product recommendations; general guidance only.\n\nUSER'S FINANCIAL DATA (JSON):\n`;
 const withTimeout = (p, ms) => Promise.race([p, new Promise((_, rej) => setTimeout(() => rej({code:'timeout'}), ms))]);
 /* ---------- real agent (server.mjs): Claude calls tools over the statement data ---------- */
-const TOOL_LABEL = {get_overview:'Reading your overview', query_transactions:'Searching transactions', list_recurring:'Checking recurring payments', simulate_changes:'Running a what-if', goal_plan:'Checking your goal'};
+const TOOL_LABEL = {get_overview:'Reading your overview', query_transactions:'Searching transactions', list_recurring:'Checking recurring payments', simulate_changes:'Running a what-if', goal_plan:'Checking your goal', show_chart:'Drawing a chart'};
 function agentPayload(){
   const a = S.a, iso = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
   return {
@@ -983,6 +1134,7 @@ async function askAgent(reply, onChange){
         if (ev.type === 'text') { if (reply.needBreak && reply.content) reply.content += '\n\n'; reply.needBreak = false; reply.content += ev.text; gotText = true; }
         else if (ev.type === 'tool') (reply.steps ||= []).push(TOOL_LABEL[ev.name] || ev.name);
         else if (ev.type === 'step') reply.needBreak = true;
+        else if (ev.type === 'chart' && ev.chart) (reply.charts ||= []).push(ev.chart);
         else if (ev.type === 'error') err = ev.message;
         onChange();
       }
@@ -1062,7 +1214,7 @@ async function handleFile(f){
     return;
   }
   if (f.size > MAX_BYTES) return showError(`${f.name} is larger than 10 MB. Export a shorter date range and try again.`);
-  try { load(txnsFromCSV(await f.text()), f.name, true); }
+  try { const parsed = txnsFromCSV(await f.text()); load(parsed, f.name + (parsed.bank ? ` (${parsed.bank} format)` : ''), true); }
   catch (err) { showError(`Could not read ${f.name}: ${err.message} Check the accepted format below the transactions table.`); }
 }
 
@@ -1146,6 +1298,21 @@ $('cal').addEventListener('click', e => { const b = e.target.closest('[data-d]')
 $('calPrev').addEventListener('click', () => { S.calMonth = new Date(S.calMonth.getFullYear(), S.calMonth.getMonth() - 1, 1); S.calSel = ''; renderCal(); });
 $('calNext').addEventListener('click', () => { S.calMonth = new Date(S.calMonth.getFullYear(), S.calMonth.getMonth() + 1, 1); S.calSel = ''; renderCal(); });
 $('icsBtn').addEventListener('click', exportICS);
+$('privBtn').addEventListener('click', togglePrivacy);
+$('shareBtn').addEventListener('click', openShare);
+$('shDl').addEventListener('click', downloadShare);
+$('shShare').addEventListener('click', nativeShare);
+$('shClose').addEventListener('click', () => $('shareDlg').close());
+$('shareDlg').addEventListener('click', e => { if (e.target === $('shareDlg')) $('shareDlg').close(); });
+$('subs').addEventListener('click', e => { const k = e.target.dataset?.neg; if (k) negotiate(k); });
+if (SR) { $('mic').hidden = $('dmic').hidden = false; $('mic').addEventListener('click', () => listen($('mic'), $('q'))); $('dmic').addEventListener('click', () => listen($('dmic'), $('dq'))); }
+updatePrivacyBtn();
+if ('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('/sw.js').catch(() => {});
+let installEvt = null;
+addEventListener('beforeinstallprompt', e => { e.preventDefault(); installEvt = e; $('installBtn').hidden = false; });
+$('installBtn').addEventListener('click', async () => { if (!installEvt) return; installEvt.prompt(); await installEvt.userChoice.catch(() => {}); installEvt = null; $('installBtn').hidden = true; });
+addEventListener('appinstalled', () => { $('installBtn').hidden = true; });
+
 $('tourBtn').addEventListener('click', () => showTour(0));
 $('tNext').addEventListener('click', () => showTour(tourI + 1));
 $('tBack').addEventListener('click', () => showTour(tourI - 1));

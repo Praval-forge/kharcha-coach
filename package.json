@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "start": "node --env-file-if-exists=.env server.mjs",
-    "test": "node test-tools.mjs"
+    "test": "node test-tools.mjs && node test-core.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.133.0"

@@ -22,6 +22,14 @@ Open http://localhost:8787 (not the HTML file directly) so the page can reach th
 | Month-by-month spend, biggest movers, per-category budgets, savings goals | `kharcha-coach.html` |
 | Heads-up nudges (renewals, price hikes, budgets) with one-tap "Ask Coach"; renewal calendar with `.ics` export and a reminder the day before | `kharcha-coach.html` |
 | First-visit tour (re-open with "Take a tour") | `kharcha-coach.html` |
+| Needs / wants / savings split against the 50/30/20 guide | `kharcha-coach.html` |
+| Agent charts drawn inside the chat (the agent calls `show_chart`) | `tools.mjs`, `server.mjs` |
+| "Negotiate" button on each subscription drafts a message asking for a better price | agent, with an offline template |
+| Ask by voice (mic button, English or Hindi) | browser speech recognition |
+| Bank format detection: HDFC, SBI, ICICI, Axis, Kotak | `kharcha-coach.html` |
+| "Share my month" image card (download or native share) | `kharcha-coach.html` |
+| "Hide amounts" privacy mode for demos | `kharcha-coach.html` |
+| Installable app (PWA) with offline fallback; API calls are never cached | `manifest.webmanifest`, `sw.js` |
 | AI agent with tools (overview, transaction search, recurring list, what-if, goal planner) | `server.mjs`, `tools.mjs` |
 | Floating "Ask Coach" chat button on every part of the page (Esc closes it), weekly briefing, cancel help, English / Hinglish / Hindi replies | agent |
 | "Sort Other with AI": labels unplaced merchants, then re-detects recurring payments | `/api/classify` |
@@ -66,5 +74,5 @@ The page is public once deployed, so keep `DAILY_CAP` low and set a spend limit 
 ## Tests
 
 ```bash
-npm test    # unit tests for the agent's tool maths
+npm test    # tool maths + the page's real CSV parsing, bank formats and recurring detection
 ```
