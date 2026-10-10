@@ -154,7 +154,7 @@ const server = http.createServer(async (req, res) => {
     // Reject foreign Host headers (DNS rebinding) so other sites cannot spend your API key.
     if (!HOSTS.has(req.headers.host || '')) { res.writeHead(403).end('Forbidden'); return; }
     if (req.method === 'GET' && (url === '/' || url === '/index.html')) {
-      res.writeHead(200, {'content-type': 'text/html; charset=utf-8'}).end(fs.readFileSync(path.join(here, 'kharcha-coach.html'))); return;
+      res.writeHead(200, {'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store'}).end(fs.readFileSync(path.join(here, 'kharcha-coach.html'))); return;
     }
     if (req.method === 'GET' && url === '/demo-statement.csv') {
       const f = path.join(here, 'demo-statement.csv');
