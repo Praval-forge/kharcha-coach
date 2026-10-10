@@ -177,6 +177,43 @@ code{font-family:var(--mono);font-size:12px;background:var(--surface2);padding:2
 .dchat{max-height:none;align-content:start}
 @media (max-width:560px){.drawer{left:8px;right:8px;bottom:8px;width:auto;height:min(82vh,700px)}body.chat-open .fab{display:none}}
 
+/* nudges */
+.nudges{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px}
+.nudge{display:flex;flex-direction:column;justify-content:space-between;gap:10px;padding:14px 16px;border-radius:18px;background:var(--surface);border:1px solid var(--line);border-left:5px solid var(--accent);box-shadow:var(--shadow-sm);font-size:14.5px;animation:rise .4s ease both}
+.nudge.warn{border-left-color:var(--warn)}.nudge.crit{border-left-color:var(--crit)}
+.nudge .na{display:flex;gap:8px;flex-wrap:wrap}
+.nudge .x{background:none;border-color:transparent;color:var(--muted);font-weight:600}
+
+/* calendar */
+.calnav{display:flex;align-items:center;gap:10px}
+.calmonth{font-family:var(--display);font-weight:700;min-width:140px;text-align:center}
+.cal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
+.dow{text-align:center;font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;padding-bottom:2px}
+.day{display:grid;grid-template-rows:auto 1fr;justify-items:center;gap:2px;padding:6px 2px;min-height:58px;border-radius:14px;font-weight:600;font-size:14px;background:var(--surface2);border-color:transparent}
+.day.out{opacity:.4}
+.day.today .dn{background:var(--grad);color:var(--on-accent);border-radius:999px;min-width:26px;height:26px;display:inline-grid;place-items:center}
+.day.sel{border-color:var(--accent);box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 35%,transparent)}
+.pips{display:flex;gap:3px;align-items:center;min-height:10px}
+.pips i{width:8px;height:8px;border-radius:50%}
+.pips small{font-size:10px;color:var(--muted)}
+.calist{list-style:none;margin:6px 0 0;padding:0;display:grid;gap:6px}
+.calist li{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:8px 12px;border-radius:14px;background:var(--surface2);font-weight:600}
+@media (max-width:560px){.day{min-height:48px;font-size:13px}.calmonth{min-width:110px}}
+
+/* tour */
+.tour{position:fixed;left:0;right:0;margin:0 auto;bottom:92px;z-index:40;width:min(440px,calc(100vw - 24px));padding:18px 20px;border-radius:24px;background:var(--surface);border:1px solid var(--accent);box-shadow:0 18px 60px rgba(5,3,20,.6);display:grid;gap:8px;animation:pop .25s ease both}
+.tour h3{margin:0;font-family:var(--display);font-size:18px}
+.tour p{margin:0;color:var(--muted);font-size:15px}
+.tbar{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:6px}
+.tbar .tbtns{display:flex;gap:8px}
+#tDots{display:flex;gap:6px}
+#tDots i{width:8px;height:8px;border-radius:50%;background:var(--line)}
+#tDots i.on{background:var(--accent);width:20px;border-radius:999px}
+.tour-hl{outline:3px solid var(--accent);outline-offset:6px;box-shadow:0 0 0 12px color-mix(in srgb,var(--accent) 22%,transparent);border-radius:24px;transition:outline-color .2s}
+.controls.tour-hl{border-radius:999px}
+.fab.tour-hl{border-radius:999px}
+@media (max-width:560px){.tour{bottom:12px}}
+
 @keyframes rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 @keyframes pop{from{opacity:0;transform:translateY(12px) scale(.97)}to{opacity:1;transform:none}}
 @keyframes growX{from{transform:scaleX(0)}to{transform:scaleX(1)}}
@@ -198,11 +235,14 @@ code{font-family:var(--mono);font-size:12px;background:var(--surface2);padding:2
       <button id="loadSample" type="button">Load sample data</button>
       <button id="loadDemo" type="button" hidden>Load demo statement</button>
       <button id="forget" type="button" hidden>Forget my data</button>
+      <button id="tourBtn" type="button">Take a tour</button>
       <button id="theme" type="button" aria-label="Switch colour theme">Light mode</button>
     </div>
   </header>
   <div class="source" id="source"></div>
   <div class="banner" id="error" role="alert" hidden></div>
+
+  <section class="nudges" id="nudges" aria-label="Heads up" hidden></section>
 
   <section class="kpis" id="kpis" aria-label="Summary"></section>
 
@@ -243,6 +283,17 @@ code{font-family:var(--mono);font-size:12px;background:var(--surface2);padding:2
       </form>
     </section>
   </div>
+
+  <section class="panel" aria-labelledby="calTitle">
+    <div class="panel-head">
+      <h2 id="calTitle">Renewal calendar</h2>
+      <div class="calnav"><button class="small" id="calPrev" type="button" aria-label="Previous month">&lsaquo;</button><span class="calmonth" id="calMonth" aria-live="polite"></span><button class="small" id="calNext" type="button" aria-label="Next month">&rsaquo;</button></div>
+    </div>
+    <div class="muted" id="calSum"></div>
+    <div class="cal" id="cal"></div>
+    <div id="calDay"></div>
+    <div><button class="small" id="icsBtn" type="button">Add renewals to my calendar (.ics)</button></div>
+  </section>
 
   <div class="grid2">
     <section class="panel" aria-labelledby="trendTitle">
@@ -299,6 +350,16 @@ code{font-family:var(--mono);font-size:12px;background:var(--surface2);padding:2
     <button class="primary" type="submit" id="dbtn">Ask</button>
   </form>
 </aside>
+
+<div id="tour" class="tour" role="dialog" aria-label="Quick tour" hidden>
+  <h3 id="tTitle"></h3>
+  <p id="tText"></p>
+  <div class="tbar">
+    <button class="small" id="tSkip" type="button">Skip</button>
+    <span id="tDots" aria-hidden="true"></span>
+    <span class="tbtns"><button class="small" id="tBack" type="button">Back</button><button class="small primary" id="tNext" type="button">Next</button></span>
+  </div>
+</div>
 
 <script>
 (() => {
@@ -577,14 +638,14 @@ function sampleTxns(){
 }
 
 /* ---------- state ---------- */
-const S = {txns: [], a: null, cancel: new Set(), chat: [], label: '', busy: false, filter: '', shown: 25, persist: false,
+const S = {txns: [], a: null, cancel: new Set(), chat: [], label: '', busy: false, filter: '', shown: 25, persist: false, dismissed: new Set(), calMonth: new Date(TODAY.getFullYear(), TODAY.getMonth(), 1), calSel: '',
   budgets: ls.get('kc-budgets', {}), goals: ls.get('kc-goals', [])};
 let ai = null, agent = null;
 
 /* Sets the working data. `persist` keeps a real statement (not the sample) on this device only. */
 function setTxns(txns, label, {persist = false, keepChat = false} = {}){
   S.txns = txns.sort((a,b) => a.date - b.date);
-  S.a = analyze(S.txns); S.label = label; S.persist = persist; S.filter = ''; S.shown = 25;
+  S.a = analyze(S.txns); S.label = label; S.persist = persist; S.filter = ''; S.shown = 25; S.dismissed.clear();
   if (!keepChat) { S.cancel.clear(); S.chat = []; }
   $('filter').value = ''; $('error').hidden = true;
   if (persist) ls.set('kc-statement', {label, txns: S.txns.map(t => ({d: isoDate(t.date), desc: t.desc, amt: t.amount, c: t.category, m: t.merchant}))});
@@ -613,7 +674,7 @@ function render(){
     ['Savings rate', sr == null ? '—' : Math.round(sr*100) + '%', sr == null ? '' : sr >= 0.2 ? 'Healthy: 20% or more' : sr >= 0 ? 'Below the 20% guideline' : 'Spending more than you earn'],
     ['Recurring per month', money(a.recurringPM), `${a.active.length} active payments · ${money(a.subsPM)} excluding rent`],
   ].map(([l,v,s]) => `<div class="kpi"><span class="label">${l}</span><span class="v">${v}</span><span class="s">${esc(s)}</span></div>`).join('');
-  renderSubs(); renderAlerts(); renderTrends(); renderGoals(); renderCats(); renderTx(); refreshForget(); updateAgentUI(); $('insights').innerHTML = insights().map(s => `<li>${s}</li>`).join(''); renderChat(); renderPresets();
+  renderSubs(); renderAlerts(); renderTrends(); renderGoals(); renderCal(); renderNudges(); renderCats(); renderTx(); refreshForget(); updateAgentUI(); $('insights').innerHTML = insights().map(s => `<li>${s}</li>`).join(''); renderChat(); renderPresets();
 }
 
 function dueText(r){
@@ -651,6 +712,93 @@ function renderTrends(){
   } else out.push('Add a statement covering two full months to see how spending changes.');
   $('movers').innerHTML = out.map(s => `<li>${s}</li>`).join('');
 }
+/* ---------- proactive nudges ---------- */
+function nudges(){
+  const a = S.a, out = [], cur = a.monthly[a.monthly.length - 1];
+  const soon = a.active.filter(r => r.daysToNext <= 3 && r.daysToNext >= 0);
+  if (soon.length) out.push({id: 'renew', tone: 'warn', text: `${soon.map(r => r.name).join(', ')} ${soon.length > 1 ? 'renew' : 'renews'} ${Math.min(...soon.map(r => r.daysToNext)) === 0 ? 'today' : 'within 3 days'} (${money(soon.reduce((s, r) => s + r.amount, 0))}).`, ask: 'What should I know about my upcoming renewals this week?'});
+  const hikes = a.active.filter(r => r.hike);
+  if (hikes.length) out.push({id: 'hike', tone: 'crit', text: `${hikes.map(r => `${r.name} (${money(r.hike.from)} → ${money(r.hike.to)})`).join(', ')} got more expensive.`, ask: 'Which of my price hikes should I act on, and what would cancelling save?'});
+  const over = cur ? Object.entries(S.budgets).filter(([c, lim]) => lim > 0 && (cur.cats[c] || 0) > lim) : [];
+  if (over.length) out.push({id: 'budget', tone: 'crit', text: `Over budget on ${over.map(([c, lim]) => `${c} by ${money(cur.cats[c] - lim)}`).join(', ')} this month.`, ask: 'I am over budget this month. Where can I cut back?'});
+  if (a.alerts.length) out.push({id: 'alerts', tone: 'warn', text: `${a.alerts.length} heads-up${a.alerts.length > 1 ? 's' : ''} in your recurring payments (overlaps, new or duplicate charges).`, ask: 'Walk me through my overlapping, new and duplicate charges.'});
+  return out.filter(n => !S.dismissed.has(n.id)).slice(0, 4);
+}
+function renderNudges(){
+  const list = nudges(); $('nudges').hidden = !list.length;
+  $('nudges').innerHTML = list.map(n => `<div class="nudge ${n.tone}" role="group"><span class="nt">${esc(n.text)}</span>
+    <span class="na"><button class="small" type="button" data-ask="${esc(n.ask)}">Ask Coach</button><button class="small x" type="button" data-x="${n.id}" aria-label="Dismiss">Dismiss</button></span></div>`).join('');
+}
+
+/* ---------- renewal calendar ---------- */
+const addMonths = (d, n) => { const x = new Date(d.getFullYear(), d.getMonth() + n, 1), dim = new Date(x.getFullYear(), x.getMonth() + 1, 0).getDate(); return new Date(x.getFullYear(), x.getMonth(), Math.min(d.getDate(), dim)); };
+/* Projected charge dates of one recurring payment inside [from, to]. */
+function occurrences(r, from, to){
+  const out = [], base = sod(r.next);
+  for (let n = 0; n < 420; n++) {
+    const d = r.freq === 'Weekly' ? new Date(base.getTime() + 7 * n * DAY) : addMonths(base, n * (r.freq === 'Monthly' ? 1 : r.freq === 'Quarterly' ? 3 : 12));
+    if (d > to) break; if (d >= from) out.push(d);
+  }
+  return out;
+}
+function renderCal(){
+  const m = S.calMonth, first = new Date(m.getFullYear(), m.getMonth(), 1), dim = new Date(m.getFullYear(), m.getMonth() + 1, 0).getDate();
+  const offset = (first.getDay() + 6) % 7, cells = Math.ceil((offset + dim) / 7) * 7, gridStart = new Date(first.getTime() - offset * DAY);
+  const gridEnd = new Date(gridStart.getFullYear(), gridStart.getMonth(), gridStart.getDate() + cells - 1);
+  const ev = new Map(); let monthTotal = 0, monthCount = 0;
+  for (const r of S.a.active) for (const d of occurrences(r, gridStart, gridEnd)) {
+    const k = isoDate(d); (ev.get(k) || ev.set(k, []).get(k)).push({name: r.name, amount: r.amount, h: hue(r.name)});
+    if (d.getMonth() === m.getMonth()) { monthTotal += r.amount; monthCount++; }
+  }
+  $('calMonth').textContent = m.toLocaleDateString('en-IN', {month: 'long', year: 'numeric'});
+  $('calSum').textContent = monthCount ? `${monthCount} renewal${monthCount > 1 ? 's' : ''} this month, ${money(monthTotal)} in total.` : 'No renewals expected this month.';
+  const todayIso = isoDate(TODAY);
+  if (!S.calSel || S.calSel.slice(0, 7) !== mkey(m)) S.calSel = [...ev.keys()].filter(k => k.slice(0, 7) === mkey(m) && k >= todayIso).sort()[0] || [...ev.keys()].filter(k => k.slice(0, 7) === mkey(m)).sort()[0] || '';
+  const head = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(d => `<span class="dow">${d}</span>`).join('');
+  let body = '';
+  for (let i = 0; i < cells; i++) {
+    const d = new Date(gridStart.getFullYear(), gridStart.getMonth(), gridStart.getDate() + i), k = isoDate(d), e = ev.get(k) || [];
+    const label = `${d.toLocaleDateString('en-IN', {day: 'numeric', month: 'long'})}${e.length ? `, ${e.length} renewal${e.length > 1 ? 's' : ''}` : ''}`;
+    body += `<button type="button" class="day${d.getMonth() !== m.getMonth() ? ' out' : ''}${k === todayIso ? ' today' : ''}${k === S.calSel ? ' sel' : ''}" data-d="${k}" aria-label="${esc(label)}" aria-pressed="${k === S.calSel}"><span class="dn">${d.getDate()}</span><span class="pips">${e.slice(0, 3).map(x => `<i style="background:hsl(${x.h} 75% 62%)"></i>`).join('')}${e.length > 3 ? `<small>+${e.length - 3}</small>` : ''}</span></button>`;
+  }
+  $('cal').innerHTML = head + body;
+  const sel = ev.get(S.calSel) || [];
+  $('calDay').innerHTML = S.calSel ? `<div class="label">${new Date(S.calSel + 'T00:00').toLocaleDateString('en-IN', {weekday: 'long', day: 'numeric', month: 'long'})}</div>` + (sel.length
+    ? `<ul class="calist">${sel.map(x => `<li><span class="av" style="--h:${x.h}" aria-hidden="true">${esc(x.name.charAt(0).toUpperCase())}</span><span>${esc(x.name)}</span><span class="num">${money(x.amount)}</span></li>`).join('')}</ul>` : '<div class="empty">Nothing renews on this day.</div>') : '';
+}
+function exportICS(){
+  const to = new Date(TODAY.getTime() + 365 * DAY), ymd = d => isoDate(d).replace(/-/g, ''), tx = s => String(s).replace(/([,;\\])/g, '\\$1');
+  const stamp = new Date().toISOString().replace(/[-:]/g, '').slice(0, 15) + 'Z', lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Kharcha Coach//EN', 'CALSCALE:GREGORIAN'];
+  const all = []; for (const r of S.a.active) for (const d of occurrences(r, TODAY, to)) all.push([r, d]);
+  all.sort((a, b) => a[1] - b[1]).slice(0, 400).forEach(([r, d]) => lines.push('BEGIN:VEVENT', `UID:kc-${r.key.replace(/\W/g, '')}-${ymd(d)}@kharcha-coach`, `DTSTAMP:${stamp}`, `DTSTART;VALUE=DATE:${ymd(d)}`, `DTEND;VALUE=DATE:${ymd(new Date(d.getTime() + DAY))}`,
+    `SUMMARY:${tx(`${r.name} renews (${money(r.amount)})`)}`, 'BEGIN:VALARM', 'TRIGGER:-P1D', 'ACTION:DISPLAY', 'DESCRIPTION:Renews tomorrow', 'END:VALARM', 'END:VEVENT'));
+  lines.push('END:VCALENDAR');
+  const url = URL.createObjectURL(new Blob([lines.join('\r\n')], {type: 'text/calendar;charset=utf-8'}));
+  const a = document.createElement('a'); a.href = url; a.download = 'kharcha-renewals.ics'; a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
+  showNote(`Saved ${Math.min(all.length, 400)} upcoming renewals. Open the file to add them to your calendar, each with a reminder the day before.`);
+}
+
+/* ---------- first-visit tour ---------- */
+const TOUR = [
+  {sel: '.controls', title: 'Start with a statement', text: 'Upload a bank statement (CSV, PDF or screenshot) or try the sample. Your data stays in this browser; only questions you ask the AI are sent to the server.'},
+  {sel: '#subsTitle', up: '.panel', title: 'Your recurring payments', text: 'Every subscription and repeating bill, with price hikes and renewal dates. Tick one to see what cancelling saves per year.'},
+  {sel: '#calTitle', up: '.panel', title: 'Renewal calendar', text: 'See what is due and when. Export it to your phone calendar and get a reminder the day before each renewal.'},
+  {sel: '#fab', title: 'Ask Coach, anywhere', text: 'Open the chat from any part of the page. Try the weekly briefing, or ask whether you can afford a trip.'},
+  {sel: '#catTitle', up: '.panel', title: 'Budgets and goals', text: 'Set a monthly limit per category and add savings goals. Coach will nudge you when you are close or over.'},
+];
+let tourI = -1;
+function showTour(i){
+  document.querySelectorAll('.tour-hl').forEach(e => e.classList.remove('tour-hl'));
+  if (i < 0 || i >= TOUR.length) { tourI = -1; $('tour').hidden = true; ls.set('kc-tour', true); return; }
+  tourI = i; const t = TOUR[i];
+  let el = document.querySelector(t.sel); if (el && t.up) el = el.closest(t.up);
+  if (el) { el.classList.add('tour-hl'); if (getComputedStyle(el).position !== 'fixed') el.scrollIntoView({block: 'center', behavior: 'smooth'}); }
+  $('tTitle').textContent = t.title; $('tText').textContent = t.text;
+  $('tDots').innerHTML = TOUR.map((_, k) => `<i class="${k === i ? 'on' : ''}"></i>`).join('');
+  $('tBack').hidden = i === 0; $('tNext').textContent = i === TOUR.length - 1 ? 'Done' : 'Next';
+  $('tour').hidden = false; $('tNext').focus({preventScroll: true});
+}
+
 function renderGoals(){
   const a = S.a, free = a.incomePM - a.spentPM, goals = [...S.goals].sort((x, y) => x.date < y.date ? -1 : 1);
   let cum = 0;
@@ -989,6 +1137,21 @@ $('cats').addEventListener('change', e => {
 $('goalForm').addEventListener('submit', addGoal);
 $('goals').addEventListener('click', e => { const id = e.target.dataset?.rm; if (!id) return; S.goals = S.goals.filter(g => g.id !== id); ls.set('kc-goals', S.goals); renderGoals(); refreshForget(); });
 $('forget').addEventListener('click', forgetAll);
+$('nudges').addEventListener('click', e => {
+  const q = e.target.dataset?.ask, x = e.target.dataset?.x;
+  if (x) { S.dismissed.add(x); renderNudges(); }
+  else if (q) { setDrawer(true); ask(q); }
+});
+$('cal').addEventListener('click', e => { const b = e.target.closest('[data-d]'); if (b) { S.calSel = b.dataset.d; renderCal(); } });
+$('calPrev').addEventListener('click', () => { S.calMonth = new Date(S.calMonth.getFullYear(), S.calMonth.getMonth() - 1, 1); S.calSel = ''; renderCal(); });
+$('calNext').addEventListener('click', () => { S.calMonth = new Date(S.calMonth.getFullYear(), S.calMonth.getMonth() + 1, 1); S.calSel = ''; renderCal(); });
+$('icsBtn').addEventListener('click', exportICS);
+$('tourBtn').addEventListener('click', () => showTour(0));
+$('tNext').addEventListener('click', () => showTour(tourI + 1));
+$('tBack').addEventListener('click', () => showTour(tourI - 1));
+$('tSkip').addEventListener('click', () => showTour(-1));
+addEventListener('keydown', e => { if (e.key === 'Escape' && tourI >= 0) showTour(-1); });
+
 const themeBtn = () => { $('theme').textContent = document.documentElement.dataset.kc === 'light' ? 'Dark mode' : 'Light mode'; };
 $('theme').addEventListener('click', () => {
   const light = document.documentElement.dataset.kc !== 'light';
@@ -1014,6 +1177,7 @@ $('gDate').min = isoDate(new Date(TODAY.getTime() + DAY));
 if (!restoreSaved()) load(sampleTxns(), 'sample statement (example data)');
 setMode();
 $('loadDemo').hidden = !location.protocol.startsWith('http');
+if (!ls.get('kc-tour', false) && !ls.get('kc-statement', null) && ls.set('kc-probe', 1)) setTimeout(() => { if (!$('tour').hidden || tourI >= 0) return; showTour(0); }, 1200);
 if (location.protocol.startsWith('http')) fetch('/api/health').then(r => r.json()).then(h => { if (h.agent) { agent = h; setMode(); updateAgentUI(); updateSavings(); } }).catch(() => {});
 if (window.claude && window.claude.use) window.claude.use('sample').then(s => { ai = s; setMode(); }).catch(() => {});
 })();

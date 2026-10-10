@@ -20,6 +20,8 @@ Open http://localhost:8787 (not the HTML file directly) so the page can reach th
 | Recurring payment finder: weekly / monthly / quarterly / yearly, price hikes, renewals, lapsed items, tick-to-cancel savings | `kharcha-coach.html` |
 | Heads-up alerts: overlapping services, new subscriptions, duplicate charges | `kharcha-coach.html` |
 | Month-by-month spend, biggest movers, per-category budgets, savings goals | `kharcha-coach.html` |
+| Heads-up nudges (renewals, price hikes, budgets) with one-tap "Ask Coach"; renewal calendar with `.ics` export and a reminder the day before | `kharcha-coach.html` |
+| First-visit tour (re-open with "Take a tour") | `kharcha-coach.html` |
 | AI agent with tools (overview, transaction search, recurring list, what-if, goal planner) | `server.mjs`, `tools.mjs` |
 | Floating "Ask Coach" chat button on every part of the page (Esc closes it), weekly briefing, cancel help, English / Hinglish / Hindi replies | agent |
 | "Sort Other with AI": labels unplaced merchants, then re-detects recurring payments | `/api/classify` |
