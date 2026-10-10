@@ -21,7 +21,7 @@ Open http://localhost:8787 (not the HTML file directly) so the page can reach th
 | Heads-up alerts: overlapping services, new subscriptions, duplicate charges | `kharcha-coach.html` |
 | Month-by-month spend, biggest movers, per-category budgets, savings goals | `kharcha-coach.html` |
 | AI agent with tools (overview, transaction search, recurring list, what-if, goal planner) | `server.mjs`, `tools.mjs` |
-| Weekly briefing, cancel help, English / Hinglish / Hindi replies | agent |
+| Floating "Ask Coach" chat button on every part of the page (Esc closes it), weekly briefing, cancel help, English / Hinglish / Hindi replies | agent |
 | "Sort Other with AI": labels unplaced merchants, then re-detects recurring payments | `/api/classify` |
 | Upload a PDF or screenshot of a statement | `/api/extract` |
 | Saves the statement, budgets and goals in this browser only; "Forget my data" clears them | `localStorage` |

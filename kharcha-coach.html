@@ -83,6 +83,15 @@ body.drag::after{content:"Drop your statement CSV anywhere";position:fixed;inset
 .presets button{font-size:13px;font-weight:400;padding:6px 10px;border-radius:999px}
 .ask{display:flex;gap:8px}
 .ask input,.filter{flex:1;min-width:0;font:inherit;padding:9px 12px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--fg)}
+.wrap{padding-bottom:96px}
+.fab{position:fixed;right:16px;bottom:16px;z-index:30;display:flex;align-items:center;gap:8px;padding:12px 18px;border-radius:999px;background:var(--accent);color:var(--on-accent);border-color:var(--accent);box-shadow:0 6px 24px rgba(0,0,0,.45)}
+.fab:hover{filter:brightness(1.08)}
+.drawer{position:fixed;right:16px;bottom:76px;z-index:30;width:min(400px,calc(100vw - 32px));height:min(600px,calc(100vh - 100px));display:grid;grid-template-rows:auto minmax(0,1fr) auto auto;gap:10px;padding:14px;background:var(--surface);border:1px solid var(--line);border-radius:16px;box-shadow:0 12px 40px rgba(0,0,0,.55)}
+.dhead{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.dhead b{font-family:var(--display);font-size:17px}
+.dtools{display:flex;gap:8px;align-items:center}
+.dchat{max-height:none;align-content:start}
+@media (max-width:560px){.drawer{left:8px;right:8px;bottom:8px;width:auto;height:min(82vh,700px)}body.chat-open .fab{display:none}}
 .row-btns{display:flex;flex-wrap:wrap;gap:8px}
 .coachbar{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;justify-content:space-between}
 .lang{font-size:13px}
@@ -216,6 +225,26 @@ code{font-family:var(--mono);font-size:12px;background:var(--bg);padding:1px 4px
     </section>
   </div>
 </div>
+
+<button id="fab" class="fab" type="button" aria-expanded="false" aria-controls="drawer">
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/></svg>
+  <span>Ask Coach</span>
+</button>
+<aside id="drawer" class="drawer" role="dialog" aria-label="Kharcha Coach chat" hidden>
+  <div class="dhead">
+    <div><b>Kharcha Coach</b><div class="mode muted" id="dmode"></div></div>
+    <div class="dtools">
+      <label class="lang muted" id="dlangWrap" hidden><select id="dlang" aria-label="Reply language"><option value="en">English</option><option value="hinglish">Hinglish</option><option value="hi">हिन्दी</option></select></label>
+      <button class="small" id="dclose" type="button" aria-label="Close chat">Close</button>
+    </div>
+  </div>
+  <div class="chat dchat" id="dchat" aria-live="polite"></div>
+  <div class="presets" id="dpresets"></div>
+  <form class="ask" id="dform">
+    <input id="dq" type="text" placeholder="Ask about your spending…" autocomplete="off" aria-label="Your question">
+    <button class="primary" type="submit" id="dbtn">Ask</button>
+  </form>
+</aside>
 
 <script>
 (() => {
@@ -540,7 +569,7 @@ function dueText(r){
 function savingsYear(){ return S.a.active.reduce((s,r) => S.cancel.has(r.key) ? s + r.yearly : s, 0); }
 function updateSavings(){ const v = savingsYear(); $('savings').hidden = !v; $('saveYear').textContent = money(v); $('cancelHelp').hidden = !agent; }
 function updateAgentUI(){
-  $('coachbar').hidden = !agent;
+  $('coachbar').hidden = !agent; $('dlangWrap').hidden = !agent;
   $('cancelHelp').hidden = !agent;
   $('classifyBtn').hidden = !agent || !S.a || !S.txns.some(t => t.amount < 0 && t.category === 'Other');
 }
@@ -697,13 +726,18 @@ function botHTML(m){
   const steps = m.steps?.length ? `<div class="steps">${m.steps.map(s => `<span class="chip">${esc(s)}</span>`).join('')}</div>` : '';
   return steps + (m.content ? md(m.content) : (m.steps?.length ? '' : 'Thinking…'));
 }
+/* The coach panel and the floating drawer are two views of the same conversation. */
+const HELLO = '<div class="msg bot"><p>Hi! I can see your statement. Ask me about subscriptions, spending, budgets or goals.</p></div>';
 function renderChat(){
-  const box = $('chat');
-  box.innerHTML = S.chat.map(m => `<div class="msg ${m.role === 'user' ? 'user' : 'bot'}">${m.role === 'user' ? esc(m.content) : botHTML(m)}</div>`).join('');
-  box.hidden = !S.chat.length;
-  box.scrollTop = box.scrollHeight;
+  const html = S.chat.map(m => `<div class="msg ${m.role === 'user' ? 'user' : 'bot'}">${m.role === 'user' ? esc(m.content) : botHTML(m)}</div>`).join('');
+  const box = $('chat'), dbox = $('dchat');
+  box.innerHTML = html; box.hidden = !S.chat.length; box.scrollTop = box.scrollHeight;
+  dbox.innerHTML = html || HELLO; dbox.scrollTop = dbox.scrollHeight;
 }
-function renderPresets(){ $('presets').innerHTML = PRESETS.map(p => `<button type="button" data-q="${esc(p)}">${esc(p)}</button>`).join(''); }
+function paintLast(html){
+  for (const id of ['chat', 'dchat']) { const box = $(id), b = box.lastElementChild; if (b && S.chat.length) { b.innerHTML = html; box.scrollTop = box.scrollHeight; } }
+}
+function renderPresets(){ $('presets').innerHTML = $('dpresets').innerHTML = PRESETS.map(p => `<button type="button" data-q="${esc(p)}">${esc(p)}</button>`).join(''); }
 function dataSummary(){
   const a = S.a;
   return JSON.stringify({
@@ -757,17 +791,17 @@ async function askAgent(reply, onChange){
 
 async function ask(q){
   q = q.trim(); if (!q || S.busy || !S.a) return;
-  S.busy = true; $('askBtn').disabled = true; $('q').value = '';
+  S.busy = true; $('askBtn').disabled = $('dbtn').disabled = true; $('q').value = $('dq').value = '';
   S.chat.push({role:'user', content:q});
   const reply = {role:'assistant', content:''}; S.chat.push(reply); renderChat();
   if (agent) {
     let raf = 0;
-    const paint = () => { raf = 0; const b = $('chat').lastElementChild; if (b) { b.innerHTML = botHTML(reply); $('chat').scrollTop = $('chat').scrollHeight; } };
+    const paint = () => { raf = 0; paintLast(botHTML(reply)); };
     try { await askAgent(reply, () => { if (!raf) raf = requestAnimationFrame(paint); }); }
     catch (e) { reply.content = localAnswer(q) + '\n\n(The AI agent is unavailable right now, so this answer comes from built-in rules.)'; reply.steps = null; }
   } else if (ai) {
     let raf = 0;
-    const paint = () => { raf = 0; const b = $('chat').lastElementChild; if (b) b.innerHTML = md(reply.content); $('chat').scrollTop = $('chat').scrollHeight; };
+    const paint = () => { raf = 0; paintLast(md(reply.content)); };
     try {
       // Keep only the last few turns; the data summary rides on the first message sent.
       const hist = S.chat.slice(0, -1).slice(-7);
@@ -781,9 +815,9 @@ async function ask(q){
   } else {
     reply.content = localAnswer(q);
   }
-  S.busy = false; $('askBtn').disabled = false; renderChat();
+  S.busy = false; $('askBtn').disabled = $('dbtn').disabled = false; renderChat();
 }
-function setMode(){ $('mode').textContent = agent ? `AI agent · ${agent.model}` : ai ? 'AI coach · powered by Claude' : 'Built-in insights (AI unavailable here)'; }
+function setMode(){ $('mode').textContent = $('dmode').textContent = agent ? `AI agent · ${agent.model}` : ai ? 'AI coach · powered by Claude' : 'Built-in insights (AI unavailable here)'; }
 
 /* ---------- export ---------- */
 function exportCSV(){
@@ -872,6 +906,17 @@ $('subs').addEventListener('change', e => {
 });
 $('presets').addEventListener('click', e => { const q = e.target.dataset?.q; if (q) ask(q); });
 $('askForm').addEventListener('submit', e => { e.preventDefault(); ask($('q').value); });
+$('dform').addEventListener('submit', e => { e.preventDefault(); ask($('dq').value); });
+$('dpresets').addEventListener('click', e => { const q = e.target.dataset?.q; if (q) ask(q); });
+$('lang').addEventListener('change', () => { $('dlang').value = $('lang').value; });
+$('dlang').addEventListener('change', () => { $('lang').value = $('dlang').value; });
+function setDrawer(open){
+  $('drawer').hidden = !open; $('fab').setAttribute('aria-expanded', String(open)); document.body.classList.toggle('chat-open', open);
+  if (open) { $('dchat').scrollTop = $('dchat').scrollHeight; $('dq').focus(); } else if (document.activeElement && $('drawer').contains(document.activeElement)) $('fab').focus();
+}
+$('fab').addEventListener('click', () => setDrawer($('drawer').hidden));
+$('dclose').addEventListener('click', () => setDrawer(false));
+addEventListener('keydown', e => { if (e.key === 'Escape' && !$('drawer').hidden) setDrawer(false); });
 $('loadSample').addEventListener('click', () => load(sampleTxns(), 'sample statement (example data)'));
 $('exportBtn').addEventListener('click', exportCSV);
 $('classifyBtn').addEventListener('click', classifyOther);
