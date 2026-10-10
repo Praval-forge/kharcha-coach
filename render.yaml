@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: kharcha-coach
+    runtime: docker
+    plan: free
+    healthCheckPath: /healthz
+    envVars:
+      - key: ANTHROPIC_API_KEY
+        sync: false        # you paste this in the Render dashboard; it is never stored in git
+      - key: DAILY_CAP
+        value: "300"       # global AI calls per day: a hard ceiling on spend
+      - key: RATE_PER_HOUR
+        value: "20"        # per visitor

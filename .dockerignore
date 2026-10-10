@@ -1,0 +1,7 @@
+node_modules
+.env
+.git
+kharcha-coach.original.html
+demo-statement.csv
+test-tools.mjs
+README.md
