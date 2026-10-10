@@ -3,7 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="color-scheme" content="light dark">
+<meta name="color-scheme" content="dark light">
+<script>try{if(JSON.parse(localStorage.getItem("kc-theme"))==="light")document.documentElement.dataset.theme="light"}catch(e){}</script>
 <title>Kharcha Coach</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -11,21 +12,19 @@
 <style>
 /* Layout: control bar → KPI strip → two-column work area (recurring finder | coach) → spending breakdown + ledger */
 :root{
-  --bg:#F3F6F4; --surface:#FFFFFF; --fg:#13201B; --muted:#5B6B64; --line:#DCE4E0;
-  --accent:#0B7A5C; --accent-soft:#DDF0E8; --on-accent:#FFFFFF;
-  --warn:#9A5B00; --warn-soft:#FBEBD2; --crit:#B3261E; --crit-soft:#F8DEDB;
+  color-scheme:dark;
+  --bg:#070B0A; --surface:#0E1513; --fg:#E6EEEA; --muted:#8FA198; --line:#1C2824;
+  --accent:#3CC496; --accent-soft:#0F2E25; --on-accent:#04211A;
+  --warn:#F0B04A; --warn-soft:#33260F; --crit:#F2887F; --crit-soft:#35191A;
   --display:"Bricolage Grotesque","Segoe UI",system-ui,sans-serif;
   --body:"IBM Plex Sans","Segoe UI",system-ui,sans-serif;
   --mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
 }
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
-  --bg:#0E1513; --surface:#151F1C; --fg:#E4ECE8; --muted:#93A39C; --line:#26332E;
-  --accent:#3CC496; --accent-soft:#163A2E; --on-accent:#06261C;
-  --warn:#F0B04A; --warn-soft:#3A2B12; --crit:#F2887F; --crit-soft:#3D1E1B}}
-:root[data-theme="dark"]{
-  --bg:#0E1513; --surface:#151F1C; --fg:#E4ECE8; --muted:#93A39C; --line:#26332E;
-  --accent:#3CC496; --accent-soft:#163A2E; --on-accent:#06261C;
-  --warn:#F0B04A; --warn-soft:#3A2B12; --crit:#F2887F; --crit-soft:#3D1E1B}
+:root[data-theme="light"]{
+  color-scheme:light;
+  --bg:#F3F6F4; --surface:#FFFFFF; --fg:#13201B; --muted:#5B6B64; --line:#DCE4E0;
+  --accent:#0B7A5C; --accent-soft:#DDF0E8; --on-accent:#FFFFFF;
+  --warn:#9A5B00; --warn-soft:#FBEBD2; --crit:#B3261E; --crit-soft:#F8DEDB}
 *{box-sizing:border-box}
 [hidden]{display:none!important}
 body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.5}
@@ -136,6 +135,7 @@ code{font-family:var(--mono);font-size:12px;background:var(--bg);padding:1px 4px
       <button id="loadSample" type="button">Load sample data</button>
       <button id="loadDemo" type="button" hidden>Load demo statement</button>
       <button id="forget" type="button" hidden>Forget my data</button>
+      <button id="theme" type="button" aria-label="Switch colour theme">Light mode</button>
     </div>
   </header>
   <div class="source" id="source"></div>
@@ -888,6 +888,13 @@ $('cats').addEventListener('change', e => {
 $('goalForm').addEventListener('submit', addGoal);
 $('goals').addEventListener('click', e => { const id = e.target.dataset?.rm; if (!id) return; S.goals = S.goals.filter(g => g.id !== id); ls.set('kc-goals', S.goals); renderGoals(); refreshForget(); });
 $('forget').addEventListener('click', forgetAll);
+const themeBtn = () => { $('theme').textContent = document.documentElement.dataset.theme === 'light' ? 'Dark mode' : 'Light mode'; };
+$('theme').addEventListener('click', () => {
+  const light = document.documentElement.dataset.theme !== 'light';
+  if (light) document.documentElement.dataset.theme = 'light'; else delete document.documentElement.dataset.theme;
+  ls.set('kc-theme', light ? 'light' : 'dark'); themeBtn();
+});
+themeBtn();
 $('loadDemo').addEventListener('click', async () => {
   try { const r = await fetch('/demo-statement.csv'); if (!r.ok) throw new Error(); await handleFile(new File([await r.text()], 'demo-statement.csv')); }
   catch { showError('Demo statement not found. Run node make-demo.mjs once, then reload.'); }
