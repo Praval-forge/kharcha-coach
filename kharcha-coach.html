@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="color-scheme" content="dark light">
-<script>try{if(JSON.parse(localStorage.getItem("kc-theme"))==="light")document.documentElement.dataset.theme="light"}catch(e){}</script>
+<script>try{if(JSON.parse(localStorage.getItem("kc-theme"))==="light")document.documentElement.dataset.kc="light"}catch(e){}</script>
 <title>Kharcha Coach</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -20,7 +20,7 @@
   --body:"IBM Plex Sans","Segoe UI",system-ui,sans-serif;
   --mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
 }
-:root[data-theme="light"]{
+:root[data-kc="light"]{
   color-scheme:light;
   --bg:#F3F6F4; --surface:#FFFFFF; --fg:#13201B; --muted:#5B6B64; --line:#DCE4E0;
   --accent:#0B7A5C; --accent-soft:#DDF0E8; --on-accent:#FFFFFF;
@@ -888,10 +888,10 @@ $('cats').addEventListener('change', e => {
 $('goalForm').addEventListener('submit', addGoal);
 $('goals').addEventListener('click', e => { const id = e.target.dataset?.rm; if (!id) return; S.goals = S.goals.filter(g => g.id !== id); ls.set('kc-goals', S.goals); renderGoals(); refreshForget(); });
 $('forget').addEventListener('click', forgetAll);
-const themeBtn = () => { $('theme').textContent = document.documentElement.dataset.theme === 'light' ? 'Dark mode' : 'Light mode'; };
+const themeBtn = () => { $('theme').textContent = document.documentElement.dataset.kc === 'light' ? 'Dark mode' : 'Light mode'; };
 $('theme').addEventListener('click', () => {
-  const light = document.documentElement.dataset.theme !== 'light';
-  if (light) document.documentElement.dataset.theme = 'light'; else delete document.documentElement.dataset.theme;
+  const light = document.documentElement.dataset.kc !== 'light';
+  if (light) document.documentElement.dataset.kc = 'light'; else delete document.documentElement.dataset.kc;
   ls.set('kc-theme', light ? 'light' : 'dark'); themeBtn();
 });
 themeBtn();
